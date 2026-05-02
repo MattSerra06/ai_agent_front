@@ -83,15 +83,10 @@ export class ChatService {
   /**
    * Parse un bloc SSE.
    *
-   * Format serveur : chaque événement est une ou plusieurs lignes `data: <texte>`
-   * séparées par `\n\n`. Le spec SSE dit : si la ligne commence par `data:` on
-   * extrait tout ce qui suit le `:`. Si le premier caractère après `:` est un
-   * espace, CE SEUL espace est ignoré. Tout le reste — y compris les espaces
-   * suivants — fait partie de la valeur.
-   *
-   * Cas fréquent côté Spring AI : `data: ` (espace seul) → le token EST un
-   * espace. L'ancien code le traitait comme vide et le jetait, d'où les mots
-   * collés.
+   * Spring WebFlux émet `data:<token>\n\n` sans espace de courtoisie après
+   * `data:`. Le strip "spec SSE" (un espace optionnel après `:`) coupe alors
+   * les tokens LLM qui commencent par un espace (" Gosling", " et"...) →
+   * mots collés. On garde tout ce qui suit `data:` tel quel.
    */
   private parseSseEvent(raw: string): string | null {
     const lines = raw.split(/\r?\n/);
@@ -100,10 +95,7 @@ export class ChatService {
     for (const line of lines) {
       if (line.startsWith('data:')) {
         hasData = true;
-        // SSE spec : strip au plus UN espace après "data:"
-        const after = line.substring(5);
-        const content = after.startsWith(' ') ? after.substring(1) : after;
-        parts.push(content);
+        parts.push(line.substring(5));
       }
       // Ignore les lignes non-data (event:, id:, retry:, commentaires)
     }
