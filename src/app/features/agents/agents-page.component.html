@@ -1,0 +1,65 @@
+<section class="lm-agents">
+  <header class="lm-agents__head">
+    <div>
+      <span class="lm-eyebrow">Atelier</span>
+      <h1 class="lm-serif">Agents</h1>
+      <p class="lm-agents__lede">
+        Configurez vos agents — modèle, température, prompt système. Le premier agent
+        que vous créez devient utilisable depuis l'écran Conversation.
+      </p>
+    </div>
+    <button mat-flat-button color="primary" (click)="createNew()" class="lm-agents__new">
+      <mat-icon>add</mat-icon>
+      <span>Nouvel agent</span>
+    </button>
+  </header>
+
+  @if (agents().length === 0) {
+    <div class="lm-agents__empty">
+      <div class="lm-agents__empty-filet" aria-hidden="true"></div>
+      <h2 class="lm-serif">Pas encore d'agent.</h2>
+      <p>Créez votre premier agent pour commencer à converser.</p>
+      <button mat-stroked-button (click)="createNew()">
+        <mat-icon>add</mat-icon>
+        <span>Créer un agent</span>
+      </button>
+    </div>
+  } @else {
+    <ul class="lm-agents__grid" role="list">
+      @for (a of agents(); track a.agentId) {
+        <li class="lm-agent-card">
+          <header class="lm-agent-card__head">
+            <div class="lm-agent-card__avatar">{{ agentInitial(a.name) }}</div>
+            <div class="lm-agent-card__id">
+              <h3 class="lm-serif">{{ a.name }}</h3>
+              <span class="lm-mono">{{ modelLabel(a.modelName) }}</span>
+            </div>
+            @if (a.isDefault) {
+              <span class="lm-badge" matTooltip="Agent par défaut">défaut</span>
+            }
+          </header>
+
+          <p class="lm-agent-card__prompt">
+            {{ a.systemPrompt || 'Aucun prompt système.' }}
+          </p>
+
+          <footer class="lm-agent-card__foot">
+            <div class="lm-agent-card__metric">
+              <span class="lm-eyebrow">Température</span>
+              <span class="lm-mono">{{ formatTemp(a.temperature) }}</span>
+            </div>
+            <div class="lm-agent-card__actions">
+              <button mat-icon-button matTooltip="Dupliquer" (click)="duplicate(a)">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Supprimer" (click)="remove(a)">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+              <button mat-stroked-button (click)="edit(a)">Modifier</button>
+            </div>
+          </footer>
+        </li>
+      }
+    </ul>
+  }
+</section>

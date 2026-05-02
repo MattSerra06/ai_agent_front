@@ -1,0 +1,223 @@
+/* === Lumen — global styles ===
+   Tailwind v4 + Material 3 custom theme (palette Aube)
+*/
+
+@use '@angular/material' as mat;
+@import 'tailwindcss';
+
+/* === Material 3 — base + density ============================== */
+@include mat.core();
+
+html {
+  /* Active la prise en compte des CSS vars système Material */
+  color-scheme: light;
+}
+
+/* Définition de notre theme M3 — système de tokens custom mappé sur nos vars CSS */
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$rose-palette,
+        theme-type: light,
+      ),
+      typography: (
+        plain-family: 'Inter, system-ui, sans-serif',
+        brand-family: 'Fraunces, Georgia, serif',
+        bold-weight: 600,
+        medium-weight: 500,
+        regular-weight: 400,
+      ),
+      density: -1,
+    )
+  );
+}
+
+/* Rebrand de l'echelle Material vers la palette Aube */
+:root {
+  /* === Tokens Lumen — palette Aube (gris-bleu froid, accent bleu acier) === */
+  --lm-bg: oklch(96.8% 0.012 248);
+  --lm-bg-elev: oklch(99% 0.008 248);
+  --lm-bg-sunken: oklch(94% 0.016 248);
+  --lm-bg-overlay: oklch(96.8% 0.012 248 / 0.85);
+
+  --lm-ink: oklch(22% 0.045 258);
+  --lm-ink-2: oklch(40% 0.035 258);
+  --lm-ink-3: oklch(56% 0.025 258);
+  --lm-ink-4: oklch(72% 0.015 258);
+
+  --lm-rule: oklch(86% 0.02 248);
+  --lm-rule-strong: oklch(74% 0.028 248);
+
+  --lm-accent: oklch(38% 0.115 248);
+  --lm-accent-2: oklch(46% 0.13 248);
+  --lm-accent-soft: oklch(91% 0.03 248);
+  --lm-accent-ink: oklch(98% 0.008 252);
+
+  --lm-bordeaux: oklch(50% 0.2 358);
+  --lm-bordeaux-soft: oklch(91% 0.04 358);
+
+  --lm-success: oklch(54% 0.07 175);
+  --lm-warn: oklch(62% 0.13 70);
+
+  --lm-agent-1: var(--lm-accent);
+  --lm-agent-2: var(--lm-bordeaux);
+  --lm-agent-3: oklch(46% 0.18 305);
+  --lm-agent-4: var(--lm-success);
+
+  --lm-r-xs: 4px;
+  --lm-r-sm: 6px;
+  --lm-r-md: 10px;
+  --lm-r-lg: 14px;
+  --lm-r-xl: 22px;
+
+  --lm-shadow-sm: 0 1px 2px oklch(20% 0.045 258 / 0.05), 0 1px 1px oklch(20% 0.045 258 / 0.04);
+  --lm-shadow-md: 0 4px 14px oklch(20% 0.045 258 / 0.07), 0 1px 2px oklch(20% 0.045 258 / 0.04);
+  --lm-shadow-lg: 0 20px 44px oklch(20% 0.045 258 / 0.10), 0 2px 6px oklch(20% 0.045 258 / 0.05);
+
+  /* === Override des tokens M3 vers nos couleurs === */
+  --mat-sys-primary: var(--lm-accent);
+  --mat-sys-on-primary: var(--lm-accent-ink);
+  --mat-sys-primary-container: var(--lm-accent-soft);
+  --mat-sys-on-primary-container: var(--lm-accent);
+
+  --mat-sys-tertiary: var(--lm-bordeaux);
+  --mat-sys-on-tertiary: #fff;
+  --mat-sys-tertiary-container: var(--lm-bordeaux-soft);
+  --mat-sys-on-tertiary-container: var(--lm-bordeaux);
+
+  --mat-sys-surface: var(--lm-bg);
+  --mat-sys-surface-bright: var(--lm-bg-elev);
+  --mat-sys-surface-dim: var(--lm-bg-sunken);
+  --mat-sys-surface-container: var(--lm-bg-elev);
+  --mat-sys-surface-container-low: var(--lm-bg);
+  --mat-sys-surface-container-lowest: var(--lm-bg);
+  --mat-sys-surface-container-high: var(--lm-bg-elev);
+  --mat-sys-surface-container-highest: var(--lm-bg-elev);
+
+  --mat-sys-on-surface: var(--lm-ink);
+  --mat-sys-on-surface-variant: var(--lm-ink-2);
+  --mat-sys-outline: var(--lm-rule-strong);
+  --mat-sys-outline-variant: var(--lm-rule);
+
+  --mat-sys-error: var(--lm-bordeaux);
+  --mat-sys-on-error: #fff;
+  --mat-sys-error-container: var(--lm-bordeaux-soft);
+  --mat-sys-on-error-container: var(--lm-bordeaux);
+
+  --mat-sys-corner-extra-small: var(--lm-r-xs);
+  --mat-sys-corner-small: var(--lm-r-sm);
+  --mat-sys-corner-medium: var(--lm-r-md);
+  --mat-sys-corner-large: var(--lm-r-lg);
+  --mat-sys-corner-extra-large: var(--lm-r-xl);
+}
+
+/* === Tailwind v4 — déclaration des tokens (CSS-first config) === */
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  --color-bg: var(--lm-bg);
+  --color-bg-elev: var(--lm-bg-elev);
+  --color-bg-sunken: var(--lm-bg-sunken);
+
+  --color-ink: var(--lm-ink);
+  --color-ink-2: var(--lm-ink-2);
+  --color-ink-3: var(--lm-ink-3);
+  --color-ink-4: var(--lm-ink-4);
+
+  --color-rule: var(--lm-rule);
+  --color-rule-strong: var(--lm-rule-strong);
+
+  --color-accent: var(--lm-accent);
+  --color-accent-2: var(--lm-accent-2);
+  --color-accent-soft: var(--lm-accent-soft);
+  --color-accent-ink: var(--lm-accent-ink);
+
+  --color-bordeaux: var(--lm-bordeaux);
+  --color-bordeaux-soft: var(--lm-bordeaux-soft);
+
+  --radius-xs: var(--lm-r-xs);
+  --radius-sm: var(--lm-r-sm);
+  --radius-md: var(--lm-r-md);
+  --radius-lg: var(--lm-r-lg);
+  --radius-xl: var(--lm-r-xl);
+
+  --shadow-soft-sm: var(--lm-shadow-sm);
+  --shadow-soft-md: var(--lm-shadow-md);
+  --shadow-soft-lg: var(--lm-shadow-lg);
+}
+
+/* === Base === */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+
+body.lm-body {
+  font-family: var(--font-sans);
+  color: var(--lm-ink);
+  background: var(--lm-bg);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'ss01', 'cv11';
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; }
+
+/* === Material override granulaires === */
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--lm-rule-strong);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lm-ink-4);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+::-webkit-scrollbar-track { background: transparent; }
+
+/* === Material override granulaires === */
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-outline-color: var(--lm-rule-strong);
+  --mdc-outlined-text-field-focus-outline-color: var(--lm-accent);
+  --mdc-outlined-text-field-hover-outline-color: var(--lm-ink-3);
+  --mdc-outlined-text-field-container-shape: var(--lm-r-md);
+  --mdc-outlined-text-field-label-text-color: var(--lm-ink-3);
+  --mdc-outlined-text-field-input-text-color: var(--lm-ink);
+  width: 100%;
+}
+
+.mat-mdc-button-base {
+  letter-spacing: 0;
+}
+
+/* Snack bars + dialog respectent la palette */
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--lm-ink);
+  --mdc-snackbar-supporting-text-color: var(--lm-bg);
+  --mat-snack-bar-button-color: var(--lm-accent-2);
+}
+
+.mat-mdc-dialog-surface {
+  background: var(--lm-bg-elev) !important;
+  border: 1px solid var(--lm-rule) !important;
+  box-shadow: var(--lm-shadow-lg) !important;
+}
+
+/* === Utility classes Lumen === */
+.lm-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--lm-ink-3);
+}
+.lm-serif { font-family: var(--font-serif); }
+.lm-mono { font-family: var(--font-mono); }

@@ -1,0 +1,98 @@
+<section class="lm-editor">
+  <header class="lm-editor__head">
+    <a routerLink="/agents" class="lm-editor__back">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Agents</span>
+    </a>
+    <div class="lm-editor__title">
+      <span class="lm-eyebrow">{{ isNew() ? 'Nouvel agent' : 'Modifier' }}</span>
+      <h1 class="lm-serif">{{ isNew() ? 'Configurer un agent' : name() || 'Agent' }}</h1>
+    </div>
+  </header>
+
+  <form class="lm-editor__form" (submit)="$event.preventDefault(); save()">
+    <fieldset class="lm-editor__group">
+      <legend class="lm-eyebrow">Identité</legend>
+      <mat-form-field appearance="outline">
+        <mat-label>Nom</mat-label>
+        <input
+          matInput
+          required
+          maxlength="60"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          name="name"
+          placeholder="ex. Conseiller juridique"
+        />
+        <mat-hint align="end">{{ name().length }} / 60</mat-hint>
+      </mat-form-field>
+    </fieldset>
+
+    <fieldset class="lm-editor__group">
+      <legend class="lm-eyebrow">Moteur</legend>
+      <div class="lm-editor__row">
+        <mat-form-field appearance="outline">
+          <mat-label>Modèle</mat-label>
+          <mat-select
+            [ngModel]="modelName()"
+            (ngModelChange)="modelName.set($event)"
+            name="modelName"
+          >
+            @for (m of models; track m.value) {
+              <mat-option [value]="m.value">{{ m.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="lm-editor__slider">
+          <div class="lm-editor__slider-head">
+            <span class="lm-editor__slider-label">Température</span>
+            <span class="lm-mono">{{ formatTemp(temperature()) }}</span>
+          </div>
+          <mat-slider min="0" max="1" step="0.05" discrete [displayWith]="formatTemp">
+            <input
+              matSliderThumb
+              [ngModel]="temperature()"
+              (ngModelChange)="temperature.set($event)"
+              name="temperature"
+            />
+          </mat-slider>
+          <div class="lm-editor__slider-scale">
+            <span>Précis</span>
+            <span>Créatif</span>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="lm-editor__group">
+      <legend class="lm-eyebrow">Prompt système</legend>
+      <mat-form-field appearance="outline" class="lm-editor__prompt">
+        <mat-label>Instructions</mat-label>
+        <textarea
+          matInput
+          rows="9"
+          [ngModel]="systemPrompt()"
+          (ngModelChange)="systemPrompt.set($event)"
+          name="systemPrompt"
+          placeholder="Vous êtes un assistant…"
+        ></textarea>
+        <mat-hint>Définit le rôle, le ton et les contraintes de l'agent.</mat-hint>
+      </mat-form-field>
+    </fieldset>
+
+    <footer class="lm-editor__foot">
+      <a mat-button routerLink="/agents">Annuler</a>
+      <button
+        type="submit"
+        mat-flat-button
+        color="primary"
+        [disabled]="!canSave() || saving()"
+        class="lm-editor__save"
+      >
+        <mat-icon>{{ saving() ? 'hourglass_top' : 'check' }}</mat-icon>
+        <span>{{ saving() ? 'Enregistrement…' : isNew() ? 'Créer l\'agent' : 'Enregistrer' }}</span>
+      </button>
+    </footer>
+  </form>
+</section>

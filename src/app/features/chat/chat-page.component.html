@@ -1,0 +1,138 @@
+<section class="lm-chat">
+  <header class="lm-chat__head">
+    <div class="lm-chat__title">
+      <span class="lm-eyebrow">Conversation</span>
+      <h1 class="lm-serif">{{ activeTitle() ?? 'Nouvelle conversation' }}</h1>
+    </div>
+
+    <div class="lm-chat__head-right">
+      <button
+        type="button"
+        mat-stroked-button
+        class="lm-agent-pick"
+        [matMenuTriggerFor]="agentMenu"
+        [disabled]="agents().length === 0"
+      >
+        <span class="lm-agent-pick__avatar" [style.--av]="'var(--lm-agent-1)'">
+          {{ agentInitial(currentAgent()?.name ?? '·') }}
+        </span>
+        <span class="lm-agent-pick__label">
+          {{ currentAgent()?.name ?? 'Choisir un agent' }}
+        </span>
+        <mat-icon class="lm-agent-pick__chev">expand_more</mat-icon>
+      </button>
+
+      <mat-menu #agentMenu="matMenu" class="lm-agent-menu">
+        @for (a of agents(); track a.agentId) {
+          <button
+            type="button"
+            mat-menu-item
+            (click)="switchAgent(a.agentId)"
+          >
+            <span class="lm-agent-pick__avatar lm-agent-pick__avatar--sm">
+              {{ agentInitial(a.name) }}
+            </span>
+            <span class="lm-agent-menu__col">
+              <span class="lm-agent-menu__name">{{ a.name }}</span>
+              <span class="lm-agent-menu__model lm-mono">{{ modelLabel(a.modelName) }}</span>
+            </span>
+          </button>
+        } @empty {
+          <div class="lm-agent-menu__empty">Aucun agent — créez-en un dans l'onglet Agents.</div>
+        }
+      </mat-menu>
+
+      <button
+        type="button"
+        mat-icon-button
+        matTooltip="Nouvelle conversation"
+        (click)="newConversation()"
+      >
+        <mat-icon>add_comment</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <div class="lm-chat__scroll" #scrollRef (scroll)="onScroll()">
+    <div class="lm-chat__rail">
+      @if (loading()) {
+        <div class="lm-empty">
+          <h2 class="lm-serif">Chargement…</h2>
+        </div>
+      } @else if (messages().length === 0) {
+        <div class="lm-empty">
+          <div class="lm-empty__filet" aria-hidden="true"></div>
+          <h2 class="lm-serif">Bonjour.</h2>
+          <p>
+            Posez une question, demandez une analyse, faites tourner un brouillon.
+            @if (currentAgent(); as ag) {
+              <br />Conversation avec <strong>{{ ag.name }}</strong> · <span class="lm-mono">{{ modelLabel(ag.modelName) }}</span>
+            }
+          </p>
+        </div>
+      }
+
+      @for (m of messages(); track m.id) {
+        @if (m.role === 'user') {
+          <div class="lm-msg lm-msg--user">
+            <div class="lm-msg__bubble">{{ m.content }}</div>
+          </div>
+        } @else {
+          <div class="lm-msg lm-msg--ai">
+            <div class="lm-msg__avatar" [style.--av]="'var(--lm-agent-1)'">
+              {{ agentInitial(currentAgent()?.name ?? '·') }}
+            </div>
+            <lm-markdown [source]="m.content" [streaming]="!!m.streaming" />
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <footer class="lm-composer">
+    <div class="lm-composer__rail">
+      <div class="lm-composer__shell">
+        <textarea
+          #textareaRef
+          rows="1"
+          [ngModel]="draft()"
+          (ngModelChange)="draft.set($event)"
+          (keydown)="onTextareaKey($event)"
+          placeholder="Écrivez votre message…  (Entrée pour envoyer · Maj+Entrée pour saut de ligne)"
+          [disabled]="agents().length === 0"
+          aria-label="Message"
+        ></textarea>
+
+        <div class="lm-composer__actions">
+          @if (streaming()) {
+            <button
+              type="button"
+              mat-flat-button
+              color="warn"
+              class="lm-composer__stop"
+              (click)="stop()"
+            >
+              <mat-icon>stop</mat-icon>
+              <span>Arrêter</span>
+            </button>
+          } @else {
+            <button
+              type="button"
+              mat-flat-button
+              color="primary"
+              class="lm-composer__send"
+              [disabled]="!canSend()"
+              (click)="send()"
+            >
+              <mat-icon>arrow_upward</mat-icon>
+              <span>Envoyer</span>
+            </button>
+          }
+        </div>
+      </div>
+      <p class="lm-composer__hint">
+        Lumen peut commettre des erreurs. Vérifiez les informations importantes.
+      </p>
+    </div>
+  </footer>
+</section>

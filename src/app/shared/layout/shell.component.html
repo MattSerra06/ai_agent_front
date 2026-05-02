@@ -1,0 +1,84 @@
+<div class="lm-shell">
+  <aside class="lm-sidebar">
+    <header class="lm-sidebar__head">
+      <a routerLink="/chat" class="lm-brand" aria-label="Lumen — accueil">
+        <lm-lumen-logo />
+        <span class="lm-brand__word lm-serif">Lumen</span>
+      </a>
+      <button
+        mat-icon-button
+        type="button"
+        class="lm-new"
+        matTooltip="Nouvelle conversation"
+        matTooltipPosition="right"
+        (click)="newChat()"
+      >
+        <mat-icon>edit_square</mat-icon>
+      </button>
+    </header>
+
+    <nav class="lm-nav">
+      <a
+        routerLink="/chat"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="lm-nav__item"
+      >
+        <mat-icon>forum</mat-icon>
+        <span>Conversations</span>
+      </a>
+      <a routerLink="/agents" routerLinkActive="is-active" class="lm-nav__item">
+        <mat-icon>psychology</mat-icon>
+        <span>Agents</span>
+        <span class="lm-nav__count">{{ agents().length }}</span>
+      </a>
+    </nav>
+
+    <div class="lm-section">
+      <div class="lm-eyebrow lm-section__head">Récent</div>
+      <ul class="lm-conv-list" role="list">
+        @for (c of recent(); track c.sessionId) {
+          <li>
+            <button
+              type="button"
+              class="lm-conv"
+              [class.is-active]="c.sessionId === activeId()"
+              (click)="selectConversation(c.sessionId)"
+              [attr.aria-current]="c.sessionId === activeId() ? 'true' : null"
+              mat-ripple
+            >
+              <span class="lm-conv__title">{{ c.title ?? 'Nouvelle conversation' }}</span>
+              <span class="lm-conv__meta">{{ agentLabel(c.agentId) }}</span>
+              <span
+                class="lm-conv__close"
+                role="button"
+                tabindex="0"
+                aria-label="Supprimer"
+                (click)="removeConversation($event, c.sessionId)"
+                (keydown.enter)="removeConversation($event, c.sessionId)"
+              >
+                <mat-icon>close</mat-icon>
+              </span>
+            </button>
+          </li>
+        } @empty {
+          <li class="lm-conv-list__empty">Aucune conversation pour le moment.</li>
+        }
+      </ul>
+    </div>
+
+    <footer class="lm-sidebar__foot">
+      <div class="lm-user">
+        <div class="lm-user__avatar" aria-hidden="true">L</div>
+        <div class="lm-user__id">
+          <div class="lm-user__name">Vous</div>
+          <div class="lm-user__plan lm-eyebrow">Atelier · v0.1</div>
+        </div>
+      </div>
+    </footer>
+  </aside>
+
+  <main class="lm-main">
+    <router-outlet />
+  </main>
+</div>
