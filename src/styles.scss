@@ -13,6 +13,7 @@ html {
   color-scheme: light;
 }
 
+
 /* Définition de notre theme M3 — système de tokens custom mappé sur nos vars CSS */
 html {
   @include mat.theme(
