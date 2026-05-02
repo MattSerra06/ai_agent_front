@@ -67,10 +67,6 @@ export class ChatService {
     }
   }
 
-  async chatSync(req: ChatRequest): Promise<ChatResponse> {
-    return firstValueFrom(this.http.post<ChatResponse>('/api/chat/sync', req));
-  }
-
   async stopGeneration(sessionId: string): Promise<void> {
     this.abortIfRunning();
     await firstValueFrom(this.http.post<void>(`/api/chat/${sessionId}/stop`, null));
