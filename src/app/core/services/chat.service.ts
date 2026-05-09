@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
 import type { ChatRequest } from '@core/models/api.models';
 import { AuthService } from './auth.service';
+import { AnonymousIdService } from './anonymous-id.service';
 import { QuotaPromptService } from './quota-prompt.service';
 
 /** Thrown when the back returns 429 on /api/chat (free quota exhausted). */
@@ -18,6 +19,7 @@ export class QuotaExceededError extends Error {
 export class ChatService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly anonId = inject(AnonymousIdService);
   private readonly quota = inject(QuotaPromptService);
 
   private currentAbort: AbortController | null = null;
@@ -100,10 +102,13 @@ export class ChatService {
   }
 
   private buildHeaders(extra: Record<string, string>): Record<string, string> {
+    const headers: Record<string, string> = {
+      ...extra,
+      'X-Anonymous-Session-Id': this.anonId.get(),
+    };
     const token = this.auth.token();
-    return token
-      ? { ...extra, Authorization: `Bearer ${token}` }
-      : extra;
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
   }
 
   /**
