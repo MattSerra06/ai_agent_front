@@ -41,8 +41,14 @@ export interface ConversationSummary {
 }
 
 export interface ServerMessage {
+  id?: number;
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
+  tokensGenerated?: number | null;
+  timeToFirstTokenMs?: number | null;
+  totalGenerationTimeMs?: number | null;
+  costUsd?: number | string | null;
+  createdAt?: string;
 }
 
 export interface ConversationDetail {
@@ -55,7 +61,14 @@ export interface ConversationDetail {
 
 export type Role = 'user' | 'assistant';
 
-export interface ChatMessage {
+export interface MessageMetrics {
+  tokensGenerated?: number | null;
+  timeToFirstTokenMs?: number | null;
+  totalGenerationTimeMs?: number | null;
+  costUsd?: number | string | null;
+}
+
+export interface ChatMessage extends MessageMetrics {
   id: string;
   role: Role;
   content: string;
@@ -67,4 +80,71 @@ export interface Agent extends AgentConfig {
   agentId: string;
   isDefault?: boolean;
   createdAt: string;
+}
+
+// === Auth ===
+
+export type UserRole = 'USER' | 'ADMIN';
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface AuthResponse {
+  token: string;
+  expiresInSeconds: number;
+  user: AuthUser;
+}
+
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  usernameOrEmail: string;
+  password: string;
+}
+
+// === Admin ===
+
+export interface AdminUserSummary {
+  id: number;
+  username: string;
+  email: string;
+  role: UserRole;
+  isDefaultUser: boolean;
+  createdAt: string;
+  conversationCount: number;
+  totalTokens: number;
+  totalCostUsd: number | string;
+}
+
+export interface AdminConversationSummary {
+  sessionId: string;
+  title: string | null;
+  agentId: string | null;
+  agentName: string | null;
+  createdAt: string;
+  messageCount: number;
+  totalTokens: number;
+  totalCostUsd: number | string;
+}
+
+export interface AdminConversationDetail {
+  sessionId: string;
+  title: string | null;
+  agentId: string | null;
+  agentName: string | null;
+  ownerUserId: number | null;
+  ownerUsername: string | null;
+  createdAt: string;
+  messageCount: number;
+  totalTokens: number;
+  totalCostUsd: number | string;
+  messages: ServerMessage[];
 }

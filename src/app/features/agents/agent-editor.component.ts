@@ -14,9 +14,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { AgentService } from '@core/services/agent.service';
+import { AuthService } from '@core/services/auth.service';
 import type { AgentConfig } from '@core/models/api.models';
 
 const DEFAULT_MODELS: { label: string; value: string }[] = [
@@ -36,6 +38,7 @@ const DEFAULT_MODELS: { label: string; value: string }[] = [
     MatInputModule,
     MatSelectModule,
     MatSliderModule,
+    MatCheckboxModule,
   ],
   templateUrl: './agent-editor.component.html',
   styleUrl: './agent-editor.component.scss',
@@ -45,15 +48,19 @@ export class AgentEditorComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly agentSvc = inject(AgentService);
+  private readonly auth = inject(AuthService);
   private readonly snack = inject(MatSnackBar);
 
   readonly models = DEFAULT_MODELS;
+  readonly readOnly = computed(() => !this.auth.isAuthenticated());
 
   readonly editingId = signal<string | null>(null);
   readonly name = signal('');
   readonly modelName = signal('moonshotai/kimi-k2.6');
   readonly temperature = signal(0.7);
   readonly systemPrompt = signal('');
+  readonly setAsDefault = signal(false);
+  readonly wasDefault = signal(false);
   readonly saving = signal(false);
   private pendingId: string | null = null;
 
@@ -99,6 +106,8 @@ export class AgentEditorComponent {
       this.modelName.set(a.modelName);
       this.temperature.set(a.temperature);
       this.systemPrompt.set(a.systemPrompt);
+      this.setAsDefault.set(!!a.isDefault);
+      this.wasDefault.set(!!a.isDefault);
       this.pendingId = null;
     } else {
       this.pendingId = id;
@@ -116,13 +125,22 @@ export class AgentEditorComponent {
     };
     try {
       const id = this.editingId();
+      let savedId: string;
       if (id) {
         await this.agentSvc.update(id, cfg);
+        savedId = id;
         this.snack.open(`Agent « ${cfg.name} » modifié`, 'Fermer', { duration: 2500 });
       } else {
         const agent = await this.agentSvc.create(cfg);
+        savedId = agent.agentId;
         this.snack.open(`Agent « ${agent.name} » enregistré`, 'Fermer', { duration: 2500 });
       }
+
+      // Promote to default only if newly checked (avoid pointless POST when state didn't change).
+      if (this.setAsDefault() && !this.wasDefault()) {
+        await this.agentSvc.setDefault(savedId);
+      }
+
       void this.router.navigate(['/agents']);
     } catch {
       // notifié par l'interceptor

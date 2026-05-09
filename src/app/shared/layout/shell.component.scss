@@ -1,27 +1,77 @@
 :host {
   display: block;
   height: 100vh;
+  height: 100dvh;
 }
 
 .lm-shell {
   display: grid;
   grid-template-columns: 264px 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: 'sidebar main';
   height: 100%;
   background: var(--lm-bg);
+  position: relative;
+  transition: grid-template-columns 220ms ease;
 }
 
+/* === Topbar mobile === */
+.lm-topbar {
+  display: none;
+  grid-area: topbar;
+  align-items: center;
+  height: 56px;
+  padding: 0 6px;
+  gap: 4px;
+  background: var(--lm-bg-elev);
+  border-bottom: 1px solid var(--lm-rule);
+  position: sticky;
+  top: 0;
+  z-index: 4;
+
+  &__btn {
+    color: var(--lm-ink-2);
+    flex: none;
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--lm-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* === Sidebar === */
 .lm-sidebar {
+  grid-area: sidebar;
   display: flex;
   flex-direction: column;
   background: var(--lm-bg-elev);
   border-right: 1px solid var(--lm-rule);
   min-width: 0;
+  overflow: hidden;
+  transition:
+    transform 220ms ease,
+    width 220ms ease;
 
   &__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 14px 12px;
+    padding: 16px 14px 8px;
+    gap: 6px;
+  }
+
+  &__toggle {
+    color: var(--lm-ink-2);
+    flex: none;
   }
 
   &__foot {
@@ -31,23 +81,68 @@
   }
 }
 
+.lm-shell__backdrop {
+  position: fixed;
+  inset: 0;
+  background: oklch(20% 0.045 258 / 0.32);
+  backdrop-filter: blur(2px);
+  z-index: 40;
+  animation: lm-fade-in 160ms ease;
+}
+
+@keyframes lm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .lm-brand {
   display: inline-flex;
   align-items: center;
   gap: 9px;
   text-decoration: none;
   color: var(--lm-ink);
+  min-width: 0;
 
   &__word {
     font-size: 20px;
     font-weight: 500;
     letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 }
 
 .lm-new {
   --mat-icon-button-state-layer-color: var(--lm-accent);
+  align-self: flex-start;
+  margin: 4px 8px 4px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 10px;
+  width: calc(100% - 16px);
+  height: 40px !important;
+  padding: 0 10px !important;
+  border-radius: var(--lm-r-md) !important;
   color: var(--lm-ink-2);
+  transition: background 120ms ease, color 120ms ease;
+
+  &:hover {
+    background: var(--lm-bg-sunken);
+    color: var(--lm-ink);
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--lm-ink-3);
+  }
+
+  &__label {
+    font-size: 13.5px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
 }
 
 .lm-nav {
@@ -73,6 +168,7 @@
       width: 18px;
       height: 18px;
       color: var(--lm-ink-3);
+      flex: none;
     }
 
     &:hover {
@@ -87,6 +183,14 @@
     }
   }
 
+  &__label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   &__count {
     margin-left: auto;
     font-size: 11px;
@@ -94,6 +198,7 @@
     padding: 1px 7px;
     border-radius: 99px;
     color: var(--lm-ink-3);
+    flex: none;
   }
 }
 
@@ -136,6 +241,8 @@
   color: var(--lm-ink-2);
   cursor: pointer;
   transition: background 120ms ease;
+  background: transparent;
+  border: 0;
 
   &__title {
     font-size: 13px;
@@ -185,10 +292,33 @@
   }
 }
 
+/* Always show close on touch devices since hover is unreliable */
+@media (hover: none) {
+  .lm-conv__close { opacity: 1; }
+}
+
 .lm-user {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+
+  &--button {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    padding: 6px 8px;
+    border-radius: var(--lm-r-md);
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    transition: background 120ms ease;
+
+    &:hover {
+      background: var(--lm-bg-sunken);
+    }
+  }
 
   &__avatar {
     width: 32px;
@@ -202,6 +332,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex: none;
+  }
+
+  &__id {
+    min-width: 0;
+    overflow: hidden;
+    flex: 1;
   }
 
   &__name {
@@ -209,13 +346,222 @@
     font-weight: 500;
     color: var(--lm-ink);
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__plan {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__chev {
+    color: var(--lm-ink-3);
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+}
+
+.lm-login {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--lm-r-md);
+  cursor: pointer;
+  font: inherit;
+  background: var(--lm-accent);
+  color: var(--lm-accent-ink, #fff);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: filter 120ms ease, background 120ms ease, color 120ms ease;
+
+  & + .lm-login {
+    margin-top: 6px;
+  }
+
+  &:hover {
+    filter: brightness(1.05);
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  &__label {
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &--ghost {
+    background: transparent;
+    color: var(--lm-ink-2);
+
+    &:hover {
+      background: var(--lm-bg-sunken);
+      color: var(--lm-ink);
+      filter: none;
+    }
   }
 }
 
 .lm-main {
+  grid-area: main;
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* =====================================================================
+   Rail (collapsed) — desktop & tablet when sidebar is closed
+   ===================================================================== */
+.lm-shell--rail {
+  grid-template-columns: 64px 1fr;
+
+  .lm-sidebar__head {
+    padding: 16px 8px 8px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .lm-brand {
+    display: none;
+  }
+
+  .lm-new {
+    width: 40px;
+    align-self: center;
+    margin: 4px auto;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  .lm-new__label {
+    display: none;
+  }
+
+  .lm-nav {
+    padding: 4px 8px 12px;
+    align-items: center;
+  }
+
+  .lm-nav__item {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .lm-nav__label,
+  .lm-nav__count {
+    display: none;
+  }
+
+  .lm-section {
+    display: none;
+  }
+
+  .lm-sidebar__foot {
+    padding: 12px 8px 16px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lm-user {
+    justify-content: center;
+  }
+
+  .lm-user__id,
+  .lm-user__chev {
+    display: none;
+  }
+
+  .lm-login {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .lm-login__label {
+    display: none;
+  }
+}
+
+/* =====================================================================
+   Tablet — sidebar in rail by default, overlay drawer when open
+   ===================================================================== */
+.lm-shell--vp-tablet {
+  &.lm-shell--open {
+    grid-template-columns: 64px 1fr;
+
+    .lm-sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      height: 100dvh;
+      z-index: 50;
+      box-shadow: var(--lm-shadow-lg);
+      border-right: 1px solid var(--lm-rule);
+      animation: lm-slide-in 220ms ease;
+    }
+  }
+}
+
+/* =====================================================================
+   Phone — topbar visible, sidebar fully hidden by default
+   ===================================================================== */
+.lm-shell--vp-phone {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'topbar'
+    'main';
+
+  .lm-topbar {
+    display: flex;
+  }
+
+  .lm-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    max-width: 86vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 50;
+    box-shadow: var(--lm-shadow-lg);
+    transform: translateX(-100%);
+  }
+
+  &.lm-shell--open .lm-sidebar {
+    transform: translateX(0);
+  }
+}
+
+@keyframes lm-slide-in {
+  from { transform: translateX(-12px); opacity: 0.5; }
+  to { transform: translateX(0); opacity: 1; }
 }

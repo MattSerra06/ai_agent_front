@@ -1,5 +1,39 @@
-<div class="lm-shell">
-  <aside class="lm-sidebar">
+@let vp = viewport();
+@let open = sidebarOpen();
+@let rail = isRail();
+@let overlay = isOverlay();
+
+<div
+  class="lm-shell"
+  [class.lm-shell--vp-phone]="vp === 'phone'"
+  [class.lm-shell--vp-tablet]="vp === 'tablet'"
+  [class.lm-shell--vp-desktop]="vp === 'desktop'"
+  [class.lm-shell--open]="open"
+  [class.lm-shell--rail]="rail"
+  [class.lm-shell--overlay]="overlay"
+>
+  @if (vp === 'phone') {
+    <header class="lm-topbar">
+      <button
+        mat-icon-button
+        type="button"
+        class="lm-topbar__btn"
+        (click)="toggleSidebar()"
+        aria-label="Ouvrir le menu"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+      <h1 class="lm-topbar__title lm-serif">
+        {{ activeTitle() ?? 'Nouvelle conversation' }}
+      </h1>
+    </header>
+  }
+
+  @if (overlay) {
+    <div class="lm-shell__backdrop" (click)="closeSidebar()" aria-hidden="true"></div>
+  }
+
+  <aside class="lm-sidebar" [attr.aria-hidden]="vp === 'phone' && !open ? 'true' : null">
     <header class="lm-sidebar__head">
       <a routerLink="/chat" class="lm-brand" aria-label="Lumen — accueil">
         <lm-lumen-logo />
@@ -8,30 +42,67 @@
       <button
         mat-icon-button
         type="button"
-        class="lm-new"
-        matTooltip="Nouvelle conversation"
+        class="lm-sidebar__toggle"
+        [matTooltip]="rail ? 'Déployer le menu' : 'Réduire le menu'"
         matTooltipPosition="right"
-        (click)="newChat()"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="rail ? 'Déployer le menu' : 'Réduire le menu'"
       >
-        <mat-icon>edit_square</mat-icon>
+        <mat-icon>{{ rail ? 'menu' : 'menu_open' }}</mat-icon>
       </button>
     </header>
 
+    <button
+      mat-icon-button
+      type="button"
+      class="lm-new"
+      matTooltip="Nouvelle conversation"
+      matTooltipPosition="right"
+      [matTooltipDisabled]="!rail"
+      (click)="newChat()"
+    >
+      <mat-icon>edit_square</mat-icon>
+      <span class="lm-new__label">Nouvelle conversation</span>
+    </button>
+
     <nav class="lm-nav">
       <a
-        routerLink="/chat"
+        routerLink="/conversations"
         routerLinkActive="is-active"
-        [routerLinkActiveOptions]="{ exact: true }"
         class="lm-nav__item"
+        matTooltip="Conversations"
+        matTooltipPosition="right"
+        [matTooltipDisabled]="!rail"
       >
         <mat-icon>forum</mat-icon>
-        <span>Conversations</span>
+        <span class="lm-nav__label">Conversations</span>
+        <span class="lm-nav__count">{{ summaries().length }}</span>
       </a>
-      <a routerLink="/agents" routerLinkActive="is-active" class="lm-nav__item">
+      <a
+        routerLink="/agents"
+        routerLinkActive="is-active"
+        class="lm-nav__item"
+        matTooltip="Agents"
+        matTooltipPosition="right"
+        [matTooltipDisabled]="!rail"
+      >
         <mat-icon>psychology</mat-icon>
-        <span>Agents</span>
+        <span class="lm-nav__label">Agents</span>
         <span class="lm-nav__count">{{ agents().length }}</span>
       </a>
+      @if (isAdmin()) {
+        <a
+          routerLink="/admin"
+          routerLinkActive="is-active"
+          class="lm-nav__item"
+          matTooltip="Administration"
+          matTooltipPosition="right"
+          [matTooltipDisabled]="!rail"
+        >
+          <mat-icon>shield_person</mat-icon>
+          <span class="lm-nav__label">Administration</span>
+        </a>
+      }
     </nav>
 
     <div class="lm-section">
@@ -68,13 +139,56 @@
     </div>
 
     <footer class="lm-sidebar__foot">
-      <div class="lm-user">
-        <div class="lm-user__avatar" aria-hidden="true">L</div>
-        <div class="lm-user__id">
-          <div class="lm-user__name">Vous</div>
-          <div class="lm-user__plan lm-eyebrow">Atelier · v0.1</div>
-        </div>
-      </div>
+      @if (isAuthenticated()) {
+        @let u = currentUser();
+        <button
+          type="button"
+          class="lm-user lm-user--button"
+          [matMenuTriggerFor]="userMenu"
+          [matTooltip]="u?.username ?? ''"
+          matTooltipPosition="right"
+          [matTooltipDisabled]="!rail"
+          aria-label="Compte utilisateur"
+        >
+          <div class="lm-user__avatar" aria-hidden="true">{{ userInitial() }}</div>
+          <div class="lm-user__id">
+            <div class="lm-user__name">{{ u?.username }}</div>
+            <div class="lm-user__plan lm-eyebrow">{{ u?.email }}</div>
+          </div>
+          <mat-icon class="lm-user__chev" aria-hidden="true">expand_more</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu" xPosition="after" yPosition="above">
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Se déconnecter</span>
+          </button>
+        </mat-menu>
+      } @else {
+        <button
+          type="button"
+          class="lm-login"
+          (click)="goToLogin()"
+          [matTooltip]="'Se connecter'"
+          matTooltipPosition="right"
+          [matTooltipDisabled]="!rail"
+          aria-label="Se connecter"
+        >
+          <mat-icon>login</mat-icon>
+          <span class="lm-login__label">Se connecter</span>
+        </button>
+        <button
+          type="button"
+          class="lm-login lm-login--ghost"
+          (click)="goToRegister()"
+          [matTooltip]="'Créer un compte'"
+          matTooltipPosition="right"
+          [matTooltipDisabled]="!rail"
+          aria-label="Créer un compte"
+        >
+          <mat-icon>person_add</mat-icon>
+          <span class="lm-login__label">Créer un compte</span>
+        </button>
+      }
     </footer>
   </aside>
 

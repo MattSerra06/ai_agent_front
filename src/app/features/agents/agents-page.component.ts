@@ -4,8 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { AgentService } from '@core/services/agent.service';
+import { AuthService } from '@core/services/auth.service';
 import { ConfirmDialogComponent } from '@shared/ui/confirm-dialog.component';
 import type { Agent } from '@core/models/api.models';
 
@@ -24,11 +26,14 @@ const MODEL_LABELS: Record<string, string> = {
 })
 export class AgentsPageComponent {
   private readonly agentSvc = inject(AgentService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly snack = inject(MatSnackBar);
 
   readonly agents = this.agentSvc.agents;
   readonly loading = this.agentSvc.loading;
+  readonly isAuthenticated = this.auth.isAuthenticated;
 
   createNew(): void {
     void this.router.navigate(['/agents/new']);
@@ -58,6 +63,18 @@ export class AgentsPageComponent {
     });
     const ok = await ref.afterClosed().toPromise();
     if (ok) this.agentSvc.delete(agent.agentId);
+  }
+
+  async toggleDefault(agent: Agent): Promise<void> {
+    if (agent.isDefault) return; // already the default; no toggle-off in this UI
+    try {
+      await this.agentSvc.setDefault(agent.agentId);
+      this.snack.open(`« ${agent.name} » est maintenant votre agent par défaut`, 'Fermer', {
+        duration: 2500,
+      });
+    } catch {
+      /* l'interceptor a déjà notifié */
+    }
   }
 
   modelLabel(modelName: string): string {

@@ -3,15 +3,24 @@
     <div>
       <span class="lm-eyebrow">Atelier</span>
       <h1 class="lm-serif">Agents</h1>
-      <p class="lm-agents__lede">
-        Configurez vos agents — modèle, température, prompt système. Le premier agent
-        que vous créez devient utilisable depuis l'écran Conversation.
-      </p>
+      @if (isAuthenticated()) {
+        <p class="lm-agents__lede">
+          Configurez vos agents — modèle, température, prompt système. Le premier agent
+          que vous créez devient utilisable depuis l'écran Conversation.
+        </p>
+      } @else {
+        <p class="lm-agents__lede">
+          Voici l'agent par défaut utilisé en mode anonyme. Connectez-vous pour créer
+          et personnaliser vos propres agents.
+        </p>
+      }
     </div>
-    <button mat-flat-button color="primary" (click)="createNew()" class="lm-agents__new">
-      <mat-icon>add</mat-icon>
-      <span>Nouvel agent</span>
-    </button>
+    @if (isAuthenticated()) {
+      <button mat-flat-button color="primary" (click)="createNew()" class="lm-agents__new">
+        <mat-icon>add</mat-icon>
+        <span>Nouvel agent</span>
+      </button>
+    }
   </header>
 
   @if (agents().length === 0) {
@@ -34,7 +43,20 @@
               <h3 class="lm-serif">{{ a.name }}</h3>
               <span class="lm-mono">{{ modelLabel(a.modelName) }}</span>
             </div>
-            @if (a.isDefault) {
+            @if (isAuthenticated()) {
+              <button
+                type="button"
+                mat-icon-button
+                class="lm-agent-card__star"
+                [class.is-active]="a.isDefault"
+                [matTooltip]="a.isDefault ? 'Agent par défaut' : 'Définir comme agent par défaut'"
+                [disabled]="a.isDefault"
+                (click)="toggleDefault(a)"
+                aria-label="Définir comme agent par défaut"
+              >
+                <mat-icon>{{ a.isDefault ? 'star' : 'star_border' }}</mat-icon>
+              </button>
+            } @else if (a.isDefault) {
               <span class="lm-badge" matTooltip="Agent par défaut">défaut</span>
             }
           </header>
@@ -49,13 +71,17 @@
               <span class="lm-mono">{{ formatTemp(a.temperature) }}</span>
             </div>
             <div class="lm-agent-card__actions">
-              <button mat-icon-button matTooltip="Dupliquer" (click)="duplicate(a)">
-                <mat-icon>content_copy</mat-icon>
-              </button>
-              <button mat-icon-button matTooltip="Supprimer" (click)="remove(a)">
-                <mat-icon>delete_outline</mat-icon>
-              </button>
-              <button mat-stroked-button (click)="edit(a)">Modifier</button>
+              @if (isAuthenticated()) {
+                <button mat-icon-button matTooltip="Dupliquer" (click)="duplicate(a)">
+                  <mat-icon>content_copy</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Supprimer" (click)="remove(a)">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+                <button mat-stroked-button (click)="edit(a)">Modifier</button>
+              } @else {
+                <button mat-stroked-button (click)="edit(a)">Voir</button>
+              }
             </div>
           </footer>
         </li>

@@ -2,11 +2,23 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
-import type { ChatRequest, ChatResponse } from '@core/models/api.models';
+import type { ChatRequest } from '@core/models/api.models';
+import { AuthService } from './auth.service';
+import { QuotaPromptService } from './quota-prompt.service';
+
+/** Thrown when the back returns 429 on /api/chat (free quota exhausted). */
+export class QuotaExceededError extends Error {
+  constructor(message = 'Quota exceeded') {
+    super(message);
+    this.name = 'QuotaExceededError';
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
+  private readonly quota = inject(QuotaPromptService);
 
   private currentAbort: AbortController | null = null;
   private readonly _streaming = signal(false);
@@ -23,16 +35,23 @@ export class ChatService {
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: {
+        credentials: 'include',
+        headers: this.buildHeaders({
           'Content-Type': 'application/json',
           Accept: 'text/event-stream',
-        },
+        }),
         body: JSON.stringify(req),
         signal: ctrl.signal,
       });
+
+      if (res.status === 429) {
+        this.quota.prompt();
+        throw new QuotaExceededError();
+      }
       if (!res.ok || !res.body) {
         throw new Error(`Chat stream failed: ${res.status} ${res.statusText}`);
       }
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -78,6 +97,13 @@ export class ChatService {
       this.currentAbort = null;
       this._streaming.set(false);
     }
+  }
+
+  private buildHeaders(extra: Record<string, string>): Record<string, string> {
+    const token = this.auth.token();
+    return token
+      ? { ...extra, Authorization: `Bearer ${token}` }
+      : extra;
   }
 
   /**

@@ -1,13 +1,16 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type { Agent, AgentConfig, AgentConfigResponse, AgentSummary } from '@core/models/api.models';
+import { AuthService } from './auth.service';
 
 const STORAGE_KEY = 'lumen.agents.v1';
+const STORAGE_OWNER_KEY = 'lumen.agents.owner.v1';
 
 @Injectable({ providedIn: 'root' })
 export class AgentService {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
 
   private readonly _agents = signal<Agent[]>(this.loadFromStorage());
   private readonly _loading = signal(false);
@@ -15,12 +18,23 @@ export class AgentService {
   readonly agents = this._agents.asReadonly();
   readonly loading = this._loading.asReadonly();
 
+  /** Current caller's default agent (first match with isDefault=true). */
   readonly defaultAgent = computed(
     () => this._agents().find((a) => a.isDefault) ?? null,
   );
 
   constructor() {
-    void this.list();
+    // Refetch (and reset cache) whenever the authenticated user changes.
+    // The first run also covers the initial bootstrap.
+    effect(() => {
+      const user = this.auth.user();
+      const ownerKey = user ? `u:${user.id}` : 'anon';
+      if (this.readOwnerKey() !== ownerKey) {
+        this._agents.set([]);
+        this.writeOwnerKey(ownerKey);
+      }
+      void this.list();
+    });
   }
 
   async list(): Promise<void> {
@@ -78,6 +92,17 @@ export class AgentService {
     }
   }
 
+  async setDefault(agentId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post<void>(`/api/agent/${agentId}/default`, null),
+    );
+    // Local optimistic update — re-fetch from the server stays cheap and keeps things honest.
+    this._agents.update((list) =>
+      list.map((a) => ({ ...a, isDefault: a.agentId === agentId })),
+    );
+    this.persist();
+  }
+
   async delete(agentId: string): Promise<void> {
     try {
       await firstValueFrom(
@@ -119,6 +144,22 @@ export class AgentService {
       return raw ? (JSON.parse(raw) as Agent[]) : [];
     } catch {
       return [];
+    }
+  }
+
+  private readOwnerKey(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_OWNER_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private writeOwnerKey(key: string): void {
+    try {
+      localStorage.setItem(STORAGE_OWNER_KEY, key);
+    } catch {
+      /* ignore */
     }
   }
 }

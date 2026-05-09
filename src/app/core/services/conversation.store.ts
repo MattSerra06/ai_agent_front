@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ChatService } from './chat.service';
+import { ChatService, QuotaExceededError } from './chat.service';
 import { ConversationService } from './conversation.service';
 import type {
   ChatMessage,
@@ -27,6 +27,7 @@ export class ConversationStore {
   private readonly _activeTitle = signal<string | null>(null);
   private readonly _activeAgentId = signal<string | null>(null);
   private readonly _loading = signal(false);
+  private readonly _summariesLoading = signal(false);
 
   readonly summaries = this._summaries.asReadonly();
   readonly activeId = this._activeId.asReadonly();
@@ -34,6 +35,7 @@ export class ConversationStore {
   readonly activeTitle = this._activeTitle.asReadonly();
   readonly activeAgentId = this._activeAgentId.asReadonly();
   readonly loading = this._loading.asReadonly();
+  readonly summariesLoading = this._summariesLoading.asReadonly();
   readonly streaming = this.chat.streaming;
 
   readonly active = computed(() => {
@@ -42,6 +44,7 @@ export class ConversationStore {
   });
 
   async loadSummaries(): Promise<void> {
+    this._summariesLoading.set(true);
     try {
       const list = await this.convSvc.list();
       const sorted = [...list].sort(
@@ -50,6 +53,8 @@ export class ConversationStore {
       this._summaries.set(sorted);
     } catch {
       /* error handled by interceptor */
+    } finally {
+      this._summariesLoading.set(false);
     }
   }
 
@@ -62,6 +67,16 @@ export class ConversationStore {
     this._messages.set([]);
     void this.router.navigate(['/chat', summary.sessionId]);
     return summary;
+  }
+
+  /**
+   * Start a fresh conversation in the UI without persisting anything yet. The session is
+   * created on the back only when the user actually sends their first message — this keeps
+   * the DB clean of empty sessions when users click "new chat" repeatedly.
+   */
+  startNewConversation(): void {
+    this.clearActive();
+    void this.router.navigate(['/chat']);
   }
 
   async hydrate(sessionId: string): Promise<boolean> {
@@ -83,6 +98,13 @@ export class ConversationStore {
 
   setActive(sessionId: string): void {
     void this.router.navigate(['/chat', sessionId]);
+  }
+
+  clearActive(): void {
+    this._activeId.set(null);
+    this._activeTitle.set(null);
+    this._activeAgentId.set(null);
+    this._messages.set([]);
   }
 
   async deleteConversation(sessionId: string): Promise<void> {
@@ -136,8 +158,15 @@ export class ConversationStore {
       if (wasEmpty) {
         this.refreshTitle(sessionId);
       }
+      this.scheduleMetricsRefresh(sessionId, aiId);
     } catch (err) {
-      if ((err as DOMException).name !== 'AbortError') {
+      if (err instanceof QuotaExceededError) {
+        // Pop-up handled centrally; just remove the placeholder + the user msg so the
+        // UI doesn't show a half-baked exchange.
+        this._messages.update((list) =>
+          list.filter((m) => m.id !== aiId && m.id !== userMsg.id),
+        );
+      } else if ((err as DOMException).name !== 'AbortError') {
         this.appendChunk(
           aiId,
           '\n\n_⚠ La réponse a été interrompue (erreur réseau)._',
@@ -184,6 +213,41 @@ export class ConversationStore {
     );
   }
 
+  /**
+   * The back persists assistant metrics asynchronously after the stream ends (~800ms for the
+   * OpenRouter Generation API roundtrip). Wait, refetch the conversation, and merge in the
+   * metrics on the local message we just streamed -- without disturbing other in-flight work.
+   */
+  private scheduleMetricsRefresh(sessionId: string, aiMsgId: string): void {
+    setTimeout(() => {
+      if (this._activeId() !== sessionId) return;
+      void this.mergeLastAssistantMetrics(sessionId, aiMsgId);
+    }, 1500);
+  }
+
+  private async mergeLastAssistantMetrics(sessionId: string, aiMsgId: string): Promise<void> {
+    try {
+      const detail = await this.convSvc.get(sessionId);
+      const lastAssistant = [...detail.messages].reverse().find((m) => m.role === 'assistant');
+      if (!lastAssistant) return;
+      this._messages.update((list) =>
+        list.map((m) =>
+          m.id === aiMsgId
+            ? {
+                ...m,
+                tokensGenerated: lastAssistant.tokensGenerated ?? null,
+                timeToFirstTokenMs: lastAssistant.timeToFirstTokenMs ?? null,
+                totalGenerationTimeMs: lastAssistant.totalGenerationTimeMs ?? null,
+                costUsd: lastAssistant.costUsd ?? null,
+              }
+            : m,
+        ),
+      );
+    } catch {
+      // Metrics will surface on next page load; nothing else to do.
+    }
+  }
+
   private async refreshTitle(sessionId: string): Promise<void> {
     try {
       const detail = await this.convSvc.get(sessionId);
@@ -205,6 +269,10 @@ function serverToChat(msgs: ServerMessage[]): ChatMessage[] {
     role: m.role === 'assistant' ? 'assistant' : 'user',
     content: m.content,
     streaming: false,
-    ts: Date.now(),
+    ts: m.createdAt ? new Date(m.createdAt).getTime() : Date.now(),
+    tokensGenerated: m.tokensGenerated ?? null,
+    timeToFirstTokenMs: m.timeToFirstTokenMs ?? null,
+    totalGenerationTimeMs: m.totalGenerationTimeMs ?? null,
+    costUsd: m.costUsd ?? null,
   }));
 }

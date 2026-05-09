@@ -1,64 +1,14 @@
 <section class="lm-chat">
   <header class="lm-chat__head">
     <div class="lm-chat__title">
-      <span class="lm-eyebrow">Conversation</span>
       <h1 class="lm-serif">{{ activeTitle() ?? 'Nouvelle conversation' }}</h1>
-    </div>
-
-    <div class="lm-chat__head-right">
-      <button
-        type="button"
-        mat-stroked-button
-        class="lm-agent-pick"
-        [matMenuTriggerFor]="agentMenu"
-        [disabled]="agents().length === 0"
-      >
-        <span class="lm-agent-pick__avatar" [style.--av]="'var(--lm-agent-1)'">
-          {{ agentInitial(currentAgent()?.name ?? '·') }}
-        </span>
-        <span class="lm-agent-pick__label">
-          {{ currentAgent()?.name ?? 'Choisir un agent' }}
-        </span>
-        <mat-icon class="lm-agent-pick__chev">expand_more</mat-icon>
-      </button>
-
-      <mat-menu #agentMenu="matMenu" class="lm-agent-menu">
-        @for (a of agents(); track a.agentId) {
-          <button
-            type="button"
-            mat-menu-item
-            (click)="switchAgent(a.agentId)"
-          >
-            <span class="lm-agent-pick__avatar lm-agent-pick__avatar--sm">
-              {{ agentInitial(a.name) }}
-            </span>
-            <span class="lm-agent-menu__col">
-              <span class="lm-agent-menu__name">{{ a.name }}</span>
-              <span class="lm-agent-menu__model lm-mono">{{ modelLabel(a.modelName) }}</span>
-            </span>
-          </button>
-        } @empty {
-          <div class="lm-agent-menu__empty">Aucun agent — créez-en un dans l'onglet Agents.</div>
-        }
-      </mat-menu>
-
-      <button
-        type="button"
-        mat-icon-button
-        matTooltip="Nouvelle conversation"
-        (click)="newConversation()"
-      >
-        <mat-icon>add_comment</mat-icon>
-      </button>
     </div>
   </header>
 
   <div class="lm-chat__scroll" #scrollRef (scroll)="onScroll()">
     <div class="lm-chat__rail">
       @if (loading()) {
-        <div class="lm-empty">
-          <h2 class="lm-serif">Chargement…</h2>
-        </div>
+        <lm-loader label="Chargement de la conversation…" />
       } @else if (messages().length === 0) {
         <div class="lm-empty">
           <div class="lm-empty__filet" aria-hidden="true"></div>
@@ -82,7 +32,58 @@
             <div class="lm-msg__avatar" [style.--av]="'var(--lm-agent-1)'">
               {{ agentInitial(currentAgent()?.name ?? '·') }}
             </div>
-            <lm-markdown [source]="m.content" [streaming]="!!m.streaming" />
+            <div class="lm-msg__body">
+              <lm-markdown [source]="m.content" [streaming]="!!m.streaming" />
+
+              @if (!m.streaming && hasMetrics(m)) {
+                <button
+                  type="button"
+                  mat-icon-button
+                  class="lm-msg__more"
+                  [matMenuTriggerFor]="metricsMenu"
+                  matTooltip="Détails de génération"
+                  aria-label="Voir les détails de la génération"
+                >
+                  <mat-icon>more_horiz</mat-icon>
+                </button>
+
+                <mat-menu #metricsMenu="matMenu" class="lm-metrics-menu" xPosition="before">
+                  <div class="lm-metrics" (click)="$event.stopPropagation()">
+                    <div class="lm-metrics__head lm-eyebrow">Génération</div>
+                    <dl class="lm-metrics__grid">
+                      <div class="lm-metrics__row">
+                        <dt>
+                          <mat-icon>token</mat-icon>
+                          <span>Tokens en sortie</span>
+                        </dt>
+                        <dd class="lm-mono">{{ formatTokens(m.tokensGenerated) }}</dd>
+                      </div>
+                      <div class="lm-metrics__row">
+                        <dt>
+                          <mat-icon>payments</mat-icon>
+                          <span>Coût</span>
+                        </dt>
+                        <dd class="lm-mono">{{ formatCost(m.costUsd) }}</dd>
+                      </div>
+                      <div class="lm-metrics__row">
+                        <dt>
+                          <mat-icon>bolt</mat-icon>
+                          <span>1<sup>er</sup> token</span>
+                        </dt>
+                        <dd class="lm-mono">{{ formatMs(m.timeToFirstTokenMs) }}</dd>
+                      </div>
+                      <div class="lm-metrics__row">
+                        <dt>
+                          <mat-icon>timer</mat-icon>
+                          <span>Total</span>
+                        </dt>
+                        <dd class="lm-mono">{{ formatMs(m.totalGenerationTimeMs) }}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </mat-menu>
+              }
+            </div>
           </div>
         }
       }
@@ -98,36 +99,102 @@
           [ngModel]="draft()"
           (ngModelChange)="draft.set($event)"
           (keydown)="onTextareaKey($event)"
+          (input)="onTextareaInput($event)"
           placeholder="Écrivez votre message…  (Entrée pour envoyer · Maj+Entrée pour saut de ligne)"
           [disabled]="agents().length === 0"
           aria-label="Message"
         ></textarea>
 
-        <div class="lm-composer__actions">
-          @if (streaming()) {
+        <div class="lm-composer__bar">
+          <div class="lm-composer__bar-left">
             <button
               type="button"
-              mat-flat-button
-              color="warn"
-              class="lm-composer__stop"
-              (click)="stop()"
+              mat-icon-button
+              class="lm-composer__plus"
+              [matMenuTriggerFor]="plusMenu"
+              matTooltip="Ajouter"
+              aria-label="Ajouter"
             >
-              <mat-icon>stop</mat-icon>
-              <span>Arrêter</span>
+              <mat-icon>add</mat-icon>
             </button>
-          } @else {
+            <mat-menu #plusMenu="matMenu" class="lm-composer-menu">
+              <button mat-menu-item disabled>
+                <mat-icon>attach_file</mat-icon>
+                <span>Joindre un fichier</span>
+              </button>
+              <button mat-menu-item disabled>
+                <mat-icon>image</mat-icon>
+                <span>Joindre une image</span>
+              </button>
+              <button mat-menu-item disabled>
+                <mat-icon>language</mat-icon>
+                <span>Recherche web</span>
+              </button>
+            </mat-menu>
+          </div>
+
+          <div class="lm-composer__bar-right">
             <button
               type="button"
-              mat-flat-button
-              color="primary"
-              class="lm-composer__send"
-              [disabled]="!canSend()"
-              (click)="send()"
+              mat-stroked-button
+              class="lm-agent-pick"
+              [matMenuTriggerFor]="agentMenu"
+              [disabled]="agents().length === 0"
             >
-              <mat-icon>arrow_upward</mat-icon>
-              <span>Envoyer</span>
+              <span class="lm-agent-pick__avatar" [style.--av]="'var(--lm-agent-1)'">
+                {{ agentInitial(currentAgent()?.name ?? '·') }}
+              </span>
+              <span class="lm-agent-pick__label">
+                {{ currentAgent()?.name ?? 'Choisir un agent' }}
+              </span>
+              <mat-icon class="lm-agent-pick__chev">expand_more</mat-icon>
             </button>
-          }
+
+            <mat-menu #agentMenu="matMenu" class="lm-agent-menu">
+              @for (a of agents(); track a.agentId) {
+                <button
+                  type="button"
+                  mat-menu-item
+                  (click)="switchAgent(a.agentId)"
+                >
+                  <span class="lm-agent-pick__avatar lm-agent-pick__avatar--sm">
+                    {{ agentInitial(a.name) }}
+                  </span>
+                  <span class="lm-agent-menu__col">
+                    <span class="lm-agent-menu__name">{{ a.name }}</span>
+                    <span class="lm-agent-menu__model lm-mono">{{ modelLabel(a.modelName) }}</span>
+                  </span>
+                </button>
+              } @empty {
+                <div class="lm-agent-menu__empty">Aucun agent — créez-en un dans l'onglet Agents.</div>
+              }
+            </mat-menu>
+
+            @if (streaming()) {
+              <button
+                type="button"
+                mat-flat-button
+                color="warn"
+                class="lm-composer__stop"
+                (click)="stop()"
+                aria-label="Arrêter"
+              >
+                <mat-icon>stop</mat-icon>
+              </button>
+            } @else {
+              <button
+                type="button"
+                mat-flat-button
+                color="primary"
+                class="lm-composer__send"
+                [disabled]="!canSend()"
+                (click)="send()"
+                aria-label="Envoyer"
+              >
+                <mat-icon>arrow_upward</mat-icon>
+              </button>
+            }
+          </div>
         </div>
       </div>
       <p class="lm-composer__hint">

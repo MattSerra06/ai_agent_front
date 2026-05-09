@@ -1,0 +1,66 @@
+<section class="lm-convs">
+  <header class="lm-convs__head">
+    <div>
+      <span class="lm-eyebrow">Atelier</span>
+      <h1 class="lm-serif">Conversations</h1>
+      <p class="lm-convs__lede">
+        Reprenez une discussion entamée ou démarrez-en une nouvelle.
+      </p>
+    </div>
+    <button mat-flat-button color="primary" (click)="newChat()" class="lm-convs__new">
+      <mat-icon>edit_square</mat-icon>
+      <span>Nouvelle conversation</span>
+    </button>
+  </header>
+
+  @if (showLoader()) {
+    <lm-loader label="Chargement de vos conversations…" />
+  } @else if (summaries().length === 0) {
+    <div class="lm-convs__empty">
+      <div class="lm-convs__empty-filet" aria-hidden="true"></div>
+      <h2 class="lm-serif">Pas encore de conversation.</h2>
+      <p>Démarrez votre première discussion pour la voir apparaître ici.</p>
+      <button mat-stroked-button (click)="newChat()">
+        <mat-icon>add</mat-icon>
+        <span>Démarrer</span>
+      </button>
+    </div>
+  } @else {
+    <ul class="lm-convs__list" role="list">
+      @for (c of summaries(); track c.sessionId) {
+        <li>
+          <button
+            type="button"
+            class="lm-conv-row"
+            (click)="open(c)"
+          >
+            <span class="lm-conv-row__avatar" aria-hidden="true">
+              <mat-icon>chat_bubble_outline</mat-icon>
+            </span>
+            <span class="lm-conv-row__body">
+              <span class="lm-conv-row__title">
+                {{ c.title ?? 'Nouvelle conversation' }}
+              </span>
+              <span class="lm-conv-row__meta">
+                <span class="lm-mono">{{ agentLabel(c.agentId) }}</span>
+                <span class="lm-conv-row__dot" aria-hidden="true">·</span>
+                <span>{{ formatDate(c.createdAt) }}</span>
+              </span>
+            </span>
+            <button
+              mat-icon-button
+              type="button"
+              class="lm-conv-row__del"
+              matTooltip="Supprimer"
+              (click)="remove($event, c)"
+              aria-label="Supprimer"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+            <mat-icon class="lm-conv-row__chev" aria-hidden="true">chevron_right</mat-icon>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

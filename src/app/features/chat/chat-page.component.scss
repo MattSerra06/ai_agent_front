@@ -21,6 +21,13 @@
     top: 0;
     z-index: 5;
     gap: 16px;
+
+    @media (max-width: 1023px) {
+      padding: 12px 18px 10px;
+    }
+    @media (max-width: 639px) {
+      display: none;
+    }
   }
 
   &__title {
@@ -35,6 +42,11 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      @media (max-width: 639px) {
+        font-size: 16px;
+        max-width: 100%;
+      }
     }
   }
 
@@ -42,6 +54,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    flex: none;
   }
 
   &__scroll {
@@ -58,6 +71,15 @@
     display: flex;
     flex-direction: column;
     gap: 26px;
+
+    @media (max-width: 1023px) {
+      padding: 28px 20px 20px;
+      gap: 22px;
+    }
+    @media (max-width: 639px) {
+      padding: 20px 14px 16px;
+      gap: 18px;
+    }
   }
 }
 
@@ -96,6 +118,9 @@
 
     .lm-msg__bubble {
       max-width: 78%;
+      @media (max-width: 639px) {
+        max-width: 90%;
+      }
       background: var(--lm-bg-elev);
       border: 1px solid var(--lm-rule);
       color: var(--lm-ink);
@@ -129,6 +154,109 @@
     align-items: center;
     justify-content: center;
     margin-top: 2px;
+  }
+
+  &__body {
+    position: relative;
+    min-width: 0;
+  }
+
+  &__more {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    width: 26px !important;
+    height: 26px !important;
+    padding: 0 !important;
+    line-height: 26px !important;
+    color: var(--lm-ink-3) !important;
+    opacity: 0;
+    transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
+
+    mat-icon {
+      font-size: 16px !important;
+      width: 16px !important;
+      height: 16px !important;
+    }
+
+    &:hover {
+      color: var(--lm-ink) !important;
+      background: var(--lm-bg-sunken) !important;
+    }
+  }
+
+  &--ai:hover &__more,
+  &__more:focus-visible,
+  &__more[aria-expanded='true'] {
+    opacity: 1;
+  }
+
+  /* Touch devices: hover doesn't fire, keep the affordance visible. */
+  @media (hover: none) {
+    &__more {
+      opacity: 0.7;
+    }
+  }
+}
+
+/* === Metrics popover === */
+.lm-metrics-menu {
+  .mat-mdc-menu-content {
+    padding: 0 !important;
+  }
+}
+
+.lm-metrics {
+  min-width: 240px;
+  padding: 12px 14px 14px;
+  font-size: 13px;
+  color: var(--lm-ink);
+
+  &__head {
+    margin-bottom: 8px;
+    color: var(--lm-ink-3);
+  }
+
+  &__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+
+    dt {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--lm-ink-2);
+      margin: 0;
+      font-weight: 400;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        color: var(--lm-ink-3);
+      }
+
+      sup {
+        font-size: 9px;
+        margin-left: 1px;
+      }
+    }
+
+    dd {
+      margin: 0;
+      font-size: 13px;
+      color: var(--lm-ink);
+      letter-spacing: -0.01em;
+    }
   }
 }
 
@@ -166,6 +294,14 @@
   &__label {
     font-size: 13px;
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 18ch;
+
+    @media (max-width: 639px) {
+      max-width: 10ch;
+    }
   }
 
   &__chev {
@@ -210,20 +346,26 @@
   backdrop-filter: blur(10px);
   padding: 14px 28px 18px;
 
+  @media (max-width: 1023px) {
+    padding: 12px 20px 14px;
+  }
+  @media (max-width: 639px) {
+    padding: 10px 12px 12px;
+  }
+
   &__rail {
     max-width: 900px;
     margin: 0 auto;
   }
 
   &__shell {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: end;
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     background: var(--lm-bg-elev);
     border: 1px solid var(--lm-rule);
-    border-radius: 16px;
-    padding: 10px 10px 10px 14px;
+    border-radius: 18px;
+    padding: 10px 12px 8px;
     box-shadow: var(--lm-shadow-sm);
     transition: border-color 120ms ease, box-shadow 120ms ease;
 
@@ -234,7 +376,7 @@
 
     textarea {
       width: 100%;
-      max-height: 220px;
+      max-height: 30vh;
       min-height: 28px;
       resize: none;
       border: 0;
@@ -242,30 +384,52 @@
       outline: none;
       color: var(--lm-ink);
       font: 14.5px/1.55 var(--font-sans);
-      padding: 4px 0;
-      field-sizing: content;
+      padding: 4px 2px;
+      overflow-y: auto;
+      box-sizing: content-box;
     }
   }
 
-  &__actions {
+  &__bar {
     display: flex;
-    gap: 6px;
     align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__bar-left,
+  &__bar-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  &__plus {
+    color: var(--lm-ink-2);
+    flex: none;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
   }
 
   &__send,
   &__stop {
     --mdc-filled-button-container-shape: 99px;
     height: 36px !important;
-    min-width: 0 !important;
-    padding: 0 14px !important;
-    font-weight: 500;
+    width: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    flex: none;
 
     mat-icon {
-      font-size: 16px !important;
-      width: 16px !important;
-      height: 16px !important;
-      margin-right: 4px;
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+      margin: 0 !important;
     }
   }
 
@@ -274,5 +438,40 @@
     font-size: 11.5px;
     color: var(--lm-ink-3);
     text-align: center;
+
+    @media (max-width: 639px) {
+      display: none;
+    }
+  }
+}
+
+.lm-composer-menu {
+  .mat-mdc-menu-item[disabled] mat-icon {
+    color: var(--lm-ink-3);
+  }
+}
+
+/* Agent picker, rendered inside composer bar */
+.lm-composer__bar-right .lm-agent-pick {
+  height: 34px;
+  padding: 0 10px 0 4px !important;
+  --mdc-outlined-button-container-shape: 99px;
+
+  .lm-agent-pick__avatar {
+    width: 22px;
+    height: 22px;
+    margin-right: 6px;
+  }
+
+  .lm-agent-pick__label {
+    max-width: 14ch;
+
+    @media (max-width: 480px) {
+      display: none;
+    }
+  }
+
+  .lm-agent-pick__chev {
+    margin-left: 4px;
   }
 }

@@ -11,6 +11,15 @@
   </header>
 
   <form class="lm-editor__form" (submit)="$event.preventDefault(); save()">
+    @if (readOnly()) {
+      <div class="lm-editor__notice">
+        <mat-icon>visibility</mat-icon>
+        <span>
+          Lecture seule — connectez-vous pour créer ou modifier des agents.
+        </span>
+      </div>
+    }
+
     <fieldset class="lm-editor__group">
       <legend class="lm-eyebrow">Identité</legend>
       <mat-form-field appearance="outline">
@@ -23,6 +32,7 @@
           (ngModelChange)="name.set($event)"
           name="name"
           placeholder="ex. Conseiller juridique"
+          [readonly]="readOnly()"
         />
         <mat-hint align="end">{{ name().length }} / 60</mat-hint>
       </mat-form-field>
@@ -37,6 +47,7 @@
             [ngModel]="modelName()"
             (ngModelChange)="modelName.set($event)"
             name="modelName"
+            [disabled]="readOnly()"
           >
             @for (m of models; track m.value) {
               <mat-option [value]="m.value">{{ m.label }}</mat-option>
@@ -49,7 +60,7 @@
             <span class="lm-editor__slider-label">Température</span>
             <span class="lm-mono">{{ formatTemp(temperature()) }}</span>
           </div>
-          <mat-slider min="0" max="1" step="0.05" discrete [displayWith]="formatTemp">
+          <mat-slider min="0" max="1" step="0.05" discrete [displayWith]="formatTemp" [disabled]="readOnly()">
             <input
               matSliderThumb
               [ngModel]="temperature()"
@@ -76,23 +87,45 @@
           (ngModelChange)="systemPrompt.set($event)"
           name="systemPrompt"
           placeholder="Vous êtes un assistant…"
+          [readonly]="readOnly()"
         ></textarea>
         <mat-hint>Définit le rôle, le ton et les contraintes de l'agent.</mat-hint>
       </mat-form-field>
     </fieldset>
 
+    @if (!readOnly()) {
+      <fieldset class="lm-editor__group">
+        <legend class="lm-eyebrow">Préférence</legend>
+        <mat-checkbox
+          [checked]="setAsDefault()"
+          (change)="setAsDefault.set($event.checked)"
+          [disabled]="wasDefault()"
+          name="setAsDefault"
+        >
+          Définir comme agent par défaut
+          @if (wasDefault()) {
+            <span class="lm-editor__hint-inline"> · déjà votre agent par défaut</span>
+          }
+        </mat-checkbox>
+      </fieldset>
+    }
+
     <footer class="lm-editor__foot">
-      <a mat-button routerLink="/agents">Annuler</a>
-      <button
-        type="submit"
-        mat-flat-button
-        color="primary"
-        [disabled]="!canSave() || saving()"
-        class="lm-editor__save"
-      >
-        <mat-icon>{{ saving() ? 'hourglass_top' : 'check' }}</mat-icon>
-        <span>{{ saving() ? 'Enregistrement…' : isNew() ? 'Créer l\'agent' : 'Enregistrer' }}</span>
-      </button>
+      @if (readOnly()) {
+        <a mat-flat-button color="primary" routerLink="/agents">Retour</a>
+      } @else {
+        <a mat-button routerLink="/agents">Annuler</a>
+        <button
+          type="submit"
+          mat-flat-button
+          color="primary"
+          [disabled]="!canSave() || saving()"
+          class="lm-editor__save"
+        >
+          <mat-icon>{{ saving() ? 'hourglass_top' : 'check' }}</mat-icon>
+          <span>{{ saving() ? 'Enregistrement…' : isNew() ? 'Créer l\'agent' : 'Enregistrer' }}</span>
+        </button>
+      }
     </footer>
   </form>
 </section>
