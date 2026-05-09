@@ -15,7 +15,7 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('@shared/layout/shell.component').then((m) => m.ShellComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'conversations' },
+      { path: '', pathMatch: 'full', redirectTo: 'chat' },
       {
         path: 'conversations',
         loadComponent: () =>
@@ -71,5 +71,5 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: 'conversations' },
+  { path: '**', redirectTo: 'chat' },
 ];
